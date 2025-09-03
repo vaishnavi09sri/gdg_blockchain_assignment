@@ -1,20 +1,39 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.0;
 
 contract PersonalLocker {
-    mapping(address => uint) public balances;
+    string public block_contr;
+    string private password;
+    address public owner;
 
-    function deposit() public payable {
-        balances[msg.sender] += msg.value;
+    event MessageUpdated(string oldMessage, string newMessage);
+
+    constructor(string memory initialMessage, string memory _password) {
+        owner = msg.sender;
+        block_contr = initialMessage;
+        password = _password;
     }
 
-    function withdraw(uint amount) public {
-        require(balances[msg.sender] >= amount, "Insufficient balance");
-        balances[msg.sender] -= amount;
-        payable(msg.sender).transfer(amount);
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not owner");
+        _;
     }
 
-    function getBalance() public view returns (uint) {
-        return balances[msg.sender];
+    function updateMessage(string memory newMessage, string memory _password) public onlyOwner {
+        require(keccak256(bytes(_password)) == keccak256(bytes(password)), "Incorrect password");
+        string memory oldMessage = block_contr;
+        block_contr = newMessage;
+        emit MessageUpdated(oldMessage, newMessage);
     }
+
+    function viewMessage() public view returns (string memory) {
+        return block_contr;
+    }
+
+    function revealPassword() public view returns (string memory) {
+        return password;
+    }
+
+    receive() external payable {}
+    fallback() external payable {}
 }
